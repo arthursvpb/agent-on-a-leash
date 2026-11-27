@@ -3,8 +3,10 @@
 import re
 from typing import Any
 
+import pytest
+
 from evals.cases import CASES
-from evals.judge import calibrate, judge_case
+from evals.judge import JudgeError, calibrate, judge_case
 from evals.run_local import run_case, run_eval
 from src.graph import build_graph
 
@@ -90,3 +92,20 @@ def test_empty_turns_are_not_reported_as_passing() -> None:
     case, _ = runs()["E1"]
     result = judge_case(RuleJudge(), case, [])
     assert (result["score"], result["comment"]) == (0, "no replies to grade")
+
+
+class NoVerdict:
+    def invoke(self, messages: list[tuple[str, str]]) -> Any:
+        return None
+
+
+class BadVerdict:
+    def invoke(self, messages: list[tuple[str, str]]) -> Any:
+        return {"score": 7}
+
+
+@pytest.mark.parametrize("judge", [NoVerdict(), BadVerdict()])
+def test_missing_or_invalid_verdict_is_a_judge_error(judge: Any) -> None:
+    case, turns = runs()["E1"]
+    with pytest.raises(JudgeError):
+        judge_case(judge, case, turns)

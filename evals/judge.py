@@ -9,7 +9,7 @@ replies we know are bad.
 
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from .cases import Case
 from .evaluators import Score, Turn
@@ -72,7 +72,14 @@ def grade(judge: Judge, messages: list[str], turn: Turn, reply: str) -> Verdict:
             str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
         )
         raise JudgeError(f"Judge call failed: {first}") from exc
-    return Verdict.model_validate(result)
+    if result is None:
+        raise JudgeError("Judge returned no verdict.")
+    try:
+        return Verdict.model_validate(result)
+    except ValidationError as exc:
+        raise JudgeError(
+            f"Judge returned an invalid verdict: {exc.errors()[0]['msg']}"
+        ) from exc
 
 
 def judge_case(judge: Judge, case: Case, turns: list[Turn]) -> Score:
