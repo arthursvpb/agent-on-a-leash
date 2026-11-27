@@ -8,6 +8,7 @@ from src.policy import Decision
 
 from .cases import CASES, CaseInput
 from .evaluators import Turn, score
+from .judge import BAD_REPLIES, Judge, calibrate, judge_case
 
 
 def config_for(
@@ -69,11 +70,18 @@ def run_case(
     return turns
 
 
-def run_eval(graph: Graph, classifier_name: str = "offline") -> int:
+def run_eval(
+    graph: Graph, classifier_name: str = "offline", judge: Judge | None = None
+) -> int:
     totals: dict[str, int] = {}
     passed = 0
+    runs = {}
     for index, case in enumerate(CASES):
-        scores = score(case, run_case(graph, case, classifier_name))
+        turns = run_case(graph, case, classifier_name)
+        runs[case["id"]] = (case, turns)
+        scores = score(case, turns)
+        if judge is not None:
+            scores.append(judge_case(judge, case, turns))
         if index == 0:
             print("case", *(row["key"] for row in scores), sep="  ")
         values = (str(row["score"]).center(len(row["key"])) for row in scores)
@@ -86,4 +94,9 @@ def run_eval(graph: Graph, classifier_name: str = "offline") -> int:
                 print(f"  {key}: {row['comment']}")
     print("  ".join(f"{key} {n}/{len(CASES)}" for key, n in totals.items()))
     print(f"{passed}/{len(CASES)} passed")
-    return int(passed != len(CASES))
+    if judge is None:
+        print("reply_judged: skipped (set JUDGE=llm to grade replies with a model)")
+        return int(passed != len(CASES))
+    caught = calibrate(judge, runs)
+    print(f"judge calibration: {caught}/{len(BAD_REPLIES)} planted bad replies failed")
+    return int(passed != len(CASES) or caught != len(BAD_REPLIES))

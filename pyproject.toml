@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["ruff", "mypy"]
+dev = ["ruff", "mypy", "pytest"]
 
 [tool.setuptools]
 packages = ["src", "evals"]
@@ -27,3 +27,6 @@ files = ["src", "evals"]
 
 [tool.setuptools.package-data]
 src = ["orders.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

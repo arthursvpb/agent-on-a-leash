@@ -19,6 +19,8 @@ certifi==2026.11.20
     #   requests
 charset-normalizer==3.5.3
     # via requests
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via pytest
 distro==1.9.0
     # via langsmith
 h11==0.16.0
@@ -45,6 +47,8 @@ idna==3.20
     #   httpx
     #   httpx2
     #   requests
+iniconfig==2.3.1
+    # via pytest
 jiter==0.19.0
     # via openai
 jsonpatch==1.48
@@ -102,8 +106,11 @@ packaging==26.4
     # via
     #   langchain-core
     #   langsmith
+    #   pytest
 pathspec==1.1.1
     # via mypy
+pluggy==1.7.0
+    # via pytest
 pydantic==2.14.4
     # via
     #   agent-on-a-leash
@@ -114,6 +121,9 @@ pydantic==2.14.4
     #   openai
 pydantic-core==2.50.5
     # via pydantic
+pygments==2.21.0
+    # via pytest
+pytest==9.2.0
 python-dotenv==1.2.4
     # via agent-on-a-leash
 pyyaml==6.0.4

@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from langgraph.types import Command
 
 from evals.cases import CASES
+from evals.judge import Judge, make_judge
 from evals.run_local import config_for, observe, run_case, run_eval
 
 from .classifier import ClassifierError, LLMClassifier
@@ -66,6 +67,17 @@ def chat(graph: Graph, classifier_name: str) -> None:
             print(resumed["reply"])
 
 
+def load_judge(default_model: str) -> Judge | None:
+    if os.getenv("JUDGE", "off") != "llm":
+        return None
+    model = os.getenv("JUDGE_MODEL", default_model)
+    if model.startswith("openai:") and not (
+        os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_ADMIN_KEY")
+    ):
+        raise ClassifierError("Set OPENAI_API_KEY to use the OpenAI judge.")
+    return make_judge(model)
+
+
 def run(command: str) -> int:
     if command == "graph":
         print(build_graph().get_graph().draw_mermaid())
@@ -80,12 +92,13 @@ def run(command: str) -> int:
     classifier = LLMClassifier(model) if name == "llm" else None
     today = date.fromisoformat(os.getenv("LEASH_TODAY", "2026-03-15"))
     graph = build_graph(classifier=classifier, clock=lambda: today)
+    judge = load_judge(model)
     if command == "eval-langsmith":
         from evals.run_langsmith import run_hosted
 
-        return run_hosted(graph, name)
+        return run_hosted(graph, name, judge)
     if command == "eval":
-        return run_eval(graph, name)
+        return run_eval(graph, name, judge)
     if command == "demo":
         demo(graph, name)
     else:
