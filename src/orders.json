@@ -1,0 +1,66 @@
+[
+  {
+    "order_id": "A1001",
+    "email": "maya@example.com",
+    "item": "Stoneware mug",
+    "price_cents": 2400,
+    "delivered_on": "2026-03-12",
+    "in_stock": true
+  },
+  {
+    "order_id": "A1002",
+    "email": "leo@example.com",
+    "item": "Brass desk lamp",
+    "price_cents": 8900,
+    "delivered_on": "2026-03-01",
+    "in_stock": true
+  },
+  {
+    "order_id": "A1003",
+    "email": "ana@example.com",
+    "item": "Espresso machine",
+    "price_cents": 42000,
+    "delivered_on": "2026-03-10",
+    "in_stock": false
+  },
+  {
+    "order_id": "A1004",
+    "email": "sam@example.com",
+    "item": "Wireless headphones",
+    "price_cents": 19900,
+    "delivered_on": "2026-02-20",
+    "in_stock": true
+  },
+  {
+    "order_id": "A1005",
+    "email": "noah@example.com",
+    "item": "Linen throw",
+    "price_cents": 6500,
+    "delivered_on": "2026-01-29",
+    "in_stock": true
+  },
+  {
+    "order_id": "A1006",
+    "email": "ivy@example.com",
+    "item": "Glass kettle",
+    "price_cents": 6000,
+    "delivered_on": "2026-02-13",
+    "in_stock": true
+  },
+  {
+    "order_id": "A1007",
+    "email": "raj@example.com",
+    "item": "Bookshelf",
+    "price_cents": 15000,
+    "delivered_on": null,
+    "in_stock": true
+  },
+  {
+    "order_id": "A1008",
+    "email": "eve@example.com",
+    "item": "Ceramic vase",
+    "price_cents": 15001,
+    "delivered_on": "2026-03-14",
+    "in_stock": false
+  }
+]

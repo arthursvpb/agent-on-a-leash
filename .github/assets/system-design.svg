@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="514" viewBox="0 0 920 514" role="img" aria-labelledby="title desc">
+  <title id="title">System design of Agent on a Leash</title>
+  <desc id="desc">The damaged-order refund path. An offline classifier or LangChain model extracts a Request. Python checks the order record. Eligible refunds up to 150 dollars go directly to the reply. Larger refunds pause for a reviewer. LangGraph saves the thread in memory. LangSmith tracing is optional.</desc>
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172738 }
+      .title { font-size: 34px; font-weight: 750 }
+      .label { font-size: 19px; font-weight: 700 }
+      .detail { font-size: 16px }
+      .edge { fill: none; stroke: #263448; stroke-width: 2.5 }
+      .card { stroke: #263448; stroke-width: 2 }
+      .group { stroke: #455770; stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round }
+    </style>
+  </defs>
+  <rect width="920" height="514" rx="22" fill="#fff"/>
+  <rect x="26" y="24" width="7" height="36" rx="3.5" fill="#249b73"/>
+  <text x="48" y="52" class="title">From ticket to refund</text>
+  <text x="894" y="49" text-anchor="end" class="detail">Order A1003 · cracked water tank</text>
+
+  <rect x="22" y="83" width="876" height="297" rx="20" fill="#eef2fc" class="group"/>
+  <text x="45" y="117" class="label">LangGraph</text>
+  <text x="163" y="117" class="detail">Routes the ticket, saves its state and resumes after review.</text>
+
+  <rect x="45" y="144" width="211" height="100" rx="14" fill="#ede7fc" class="card"/>
+  <text x="61" y="176" class="label">LangChain</text>
+  <text x="61" y="202" class="detail">Model extracts a request:</text>
+  <text x="61" y="225" class="detail">intent, order ID, remedy.</text>
+
+  <path d="M256 195H303" class="edge"/>
+  <path d="M295 190l10 5-10 5z" fill="#263448"/>
+  <rect x="307" y="144" width="262" height="100" rx="14" fill="#fff3cf" class="card"/>
+  <text x="324" y="176" class="label">Python · refund policy</text>
+  <text x="324" y="202" class="detail">Check sender and eligibility.</text>
+  <text x="324" y="225" class="detail">Use the recorded price in cents.</text>
+
+  <path d="M569 195H659" class="edge"/>
+  <path d="M651 190l10 5-10 5z" fill="#263448"/>
+  <text x="615" y="183" text-anchor="middle" class="detail">≤ $150</text>
+  <rect x="663" y="144" width="211" height="100" rx="14" fill="#e0f6e8" class="card"/>
+  <text x="679" y="176" class="label">Customer reply</text>
+  <text x="679" y="202" class="detail">Render the decision</text>
+  <text x="679" y="225" class="detail">from a template.</text>
+
+  <rect x="45" y="280" width="211" height="76" rx="14" fill="#fff" class="card"/>
+  <text x="61" y="310" class="label">Order records</text>
+  <text x="61" y="336" class="detail">A1003 · paid $420.00</text>
+  <path d="M256 318H345V248" class="edge"/>
+  <path d="M340 254l5-9 5 9z" fill="#263448"/>
+
+  <path d="M490 244V318H590" class="edge"/>
+  <path d="M582 313l10 5-10 5z" fill="#263448"/>
+  <text x="540" y="305" text-anchor="middle" class="detail">&gt; $150</text>
+  <rect x="594" y="280" width="280" height="76" rx="14" fill="#ffe7e0" class="card"/>
+  <text x="611" y="310" class="label">Human approval</text>
+  <text x="611" y="336" class="detail">Pause for the $420 decision.</text>
+  <path d="M769 280V248" class="edge"/>
+  <path d="M764 254l5-9 5 9z" fill="#263448"/>
+
+  <path d="M438 380v26" class="edge" stroke-dasharray="3 4"/>
+  <path d="M433 400l5 9 5-9z" fill="#263448"/>
+  <rect x="22" y="410" width="876" height="86" rx="15" fill="#f3effb" class="group"/>
+  <text x="45" y="443" class="label">LangSmith · optional</text>
+  <text x="45" y="471" class="detail">Follow one ticket</text>
+  <text x="187" y="471" class="detail">→   inspect the rule, amount and pause.</text>
+  <path d="M516 427v52" stroke="#c9c1dc"/>
+  <text x="539" y="443" class="label">Compare runs</text>
+  <text x="539" y="471" class="detail">Score eight cases in a hosted experiment.</text>
+</svg>
