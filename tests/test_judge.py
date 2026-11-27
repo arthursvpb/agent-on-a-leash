@@ -4,8 +4,8 @@ import re
 from typing import Any
 
 from evals.cases import CASES
-from evals.judge import BAD_REPLIES, calibrate, judge_case
-from evals.run_local import run_case
+from evals.judge import calibrate, judge_case
+from evals.run_local import run_case, run_eval
 from src.graph import build_graph
 
 
@@ -60,5 +60,33 @@ def test_judge_sees_the_decision_and_the_reply() -> None:
     assert result["score"] == 0
 
 
+class AlwaysPass:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def invoke(self, messages: list[tuple[str, str]]) -> dict[str, Any]:
+        self.calls += 1
+        return {"score": 1, "reason": "looks fine"}
+
+
 def test_calibration_catches_every_planted_bad_reply() -> None:
-    assert calibrate(RuleJudge(), runs()) == len(BAD_REPLIES)
+    assert calibrate(RuleJudge(), runs()) == []
+
+
+def test_uncalibrated_judge_is_rejected_before_grading_cases() -> None:
+    judge = AlwaysPass()
+    assert run_eval(build_graph(), judge=judge) == 1
+    assert judge.calls == 3  # only the planted replies; no case was graded
+
+
+def test_missing_or_changed_anchor_is_a_calibration_problem() -> None:
+    all_runs = runs()
+    del all_runs["E6"]
+    problems = calibrate(RuleJudge(), all_runs)
+    assert any("anchor E6" in problem for problem in problems)
+
+
+def test_empty_turns_are_not_reported_as_passing() -> None:
+    case, _ = runs()["E1"]
+    result = judge_case(RuleJudge(), case, [])
+    assert (result["score"], result["comment"]) == (0, "no replies to grade")

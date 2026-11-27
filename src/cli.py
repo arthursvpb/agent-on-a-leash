@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from langgraph.types import Command
 
 from evals.cases import CASES
-from evals.judge import Judge, make_judge
+from evals.judge import Judge, JudgeError, make_judge
 from evals.run_local import config_for, observe, run_case, run_eval
 
 from .classifier import ClassifierError, LLMClassifier
@@ -116,7 +116,7 @@ def main() -> int:
     os.environ.setdefault("LANGSMITH_PROJECT", "agent-on-a-leash")
     try:
         return run(command)
-    except (ClassifierError, ValueError) as error:
+    except (ClassifierError, JudgeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1
     except EOFError:

@@ -10,8 +10,16 @@ from src.graph import Graph
 
 from .cases import CASES, Case, CaseInput
 from .evaluators import Score, Turn, score
-from .judge import Judge, judge_case
+from .judge import BAD_REPLIES, Judge, calibrate, judge_case
 from .run_local import run_case
+
+EXACT_KEYS = {
+    "decision_correct",
+    "amount_correct",
+    "paused_when_required",
+    "rule_trace",
+    "reply_safe",
+}
 
 DATASET = "agent-on-a-leash-cases"
 
@@ -69,8 +77,19 @@ def judged_case(judge: Judge) -> Callable[..., dict[str, list[Score]]]:
 
 
 def run_hosted(graph: Graph, classifier_name: str, judge: Judge | None = None) -> int:
+    expected = EXACT_KEYS if judge is None else EXACT_KEYS | {"reply_judged"}
+    if judge is not None:
+        runs = {
+            case["id"]: (case, run_case(graph, case, classifier_name)) for case in CASES
+        }
+        problems = calibrate(judge, runs)
+        if problems:
+            print(
+                f"judge not calibrated ({len(problems)}/{len(BAD_REPLIES)} problems): "
+                + "; ".join(problems)
+            )
+            return 1
     client = Client()
-    expected = 5 if judge is None else 6
 
     def target(inputs: dict[str, Any]) -> dict[str, list[Turn]]:
         return {"turns": run_case(graph, cast(CaseInput, inputs), classifier_name)}
@@ -90,7 +109,8 @@ def run_hosted(graph: Graph, classifier_name: str, judge: Judge | None = None) -
         results = row["evaluation_results"]["results"]
         for result in results:
             totals[result.key] += result.score == 1
-        passed += len(results) == expected and all(
+        keys = [result.key for result in results]
+        passed += sorted(keys) == sorted(expected) and all(
             result.score == 1 for result in results
         )
     print("  ".join(f"{key} {total}/{len(CASES)}" for key, total in totals.items()))

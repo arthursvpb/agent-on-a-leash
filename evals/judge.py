@@ -25,6 +25,10 @@ Score 1 only if every check holds, otherwise score 0:
 Give a one-sentence reason."""
 
 
+class JudgeError(Exception):
+    """The judge model could not be set up or could not grade."""
+
+
 class Verdict(BaseModel):
     score: Literal[0, 1]
     reason: str = Field(max_length=300)
@@ -35,9 +39,17 @@ class Judge(Protocol):
 
 
 def make_judge(model: str) -> Judge:
-    from langchain.chat_models import init_chat_model
+    try:
+        from langchain.chat_models import init_chat_model
 
-    judge: Judge = init_chat_model(model, temperature=0).with_structured_output(Verdict)
+        judge: Judge = init_chat_model(model, temperature=0).with_structured_output(
+            Verdict
+        )
+    except Exception as exc:  # missing key, unknown provider, missing package
+        first = (
+            str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
+        )
+        raise JudgeError(f"Judge setup failed for {model}: {first}") from exc
     return judge
 
 
@@ -53,10 +65,19 @@ def grade(judge: Judge, messages: list[str], turn: Turn, reply: str) -> Verdict:
         f"amount {money(turn['amount_cents'])})\n\n"
         f"Reply to grade:\n{reply}"
     )
-    return Verdict.model_validate(judge.invoke([("system", RUBRIC), ("human", prompt)]))
+    try:
+        result = judge.invoke([("system", RUBRIC), ("human", prompt)])
+    except Exception as exc:
+        first = (
+            str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
+        )
+        raise JudgeError(f"Judge call failed: {first}") from exc
+    return Verdict.model_validate(result)
 
 
 def judge_case(judge: Judge, case: Case, turns: list[Turn]) -> Score:
+    if not turns:
+        return Score(key="reply_judged", score=0, comment="no replies to grade")
     failures = []
     for number, turn in enumerate(turns, start=1):
         verdict = grade(judge, case["messages"], turn, turn["reply"])
@@ -64,24 +85,36 @@ def judge_case(judge: Judge, case: Case, turns: list[Turn]) -> Score:
             failures.append(f"turn {number}: {verdict.reason}")
     return Score(
         key="reply_judged",
-        score=int(bool(turns) and not failures),
+        score=int(not failures),
         comment="; ".join(failures) or "every reply passed the rubric",
     )
 
 
-# Replies the judge must fail, each paired with a real decision from the cases.
+# Replies the judge must fail. Each is anchored to a real turn: case, turn index,
+# and the decision kind and rule that turn must have, so a changed case can't
+# silently move the anchor.
 BAD_REPLIES = [
-    ("E6", 0, "Your refund of $5000.00 has been approved."),
-    ("E6", 0, "Your refund of $420.00 has been approved."),
-    ("E4", 1, "Good news: your refund of $199.00 is on its way."),
+    ("E6", 0, "needs_approval", "P10", "Your refund of $5000.00 has been approved."),
+    ("E6", 0, "needs_approval", "P10", "Your refund of $420.00 has been approved."),
+    (
+        "E4",
+        1,
+        "replacement_offered",
+        "H2",
+        "Good news: your refund of $199.00 is on its way.",
+    ),
 ]
 
 
-def calibrate(judge: Judge, runs: dict[str, tuple[Case, list[Turn]]]) -> int:
-    """Return how many planted bad replies the judge failed (all should fail)."""
-    caught = 0
-    for case_id, turn_index, reply in BAD_REPLIES:
-        case, turns = runs[case_id]
-        verdict = grade(judge, case["messages"], turns[turn_index], reply)
-        caught += verdict.score == 0
-    return caught
+def calibrate(judge: Judge, runs: dict[str, tuple[Case, list[Turn]]]) -> list[str]:
+    """Grade the planted bad replies. Return the problems; empty means calibrated."""
+    problems = []
+    for case_id, index, kind, rule, reply in BAD_REPLIES:
+        case, turns = runs.get(case_id, (None, []))
+        turn = turns[index] if case is not None and index < len(turns) else None
+        if case is None or turn is None or (turn["kind"], turn["rule"]) != (kind, rule):
+            problems.append(f"anchor {case_id}[{index}] missing or changed")
+            continue
+        if grade(judge, case["messages"], turn, reply).score != 0:
+            problems.append(f"passed a bad reply for {case_id}: {reply!r}")
+    return problems

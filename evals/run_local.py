@@ -73,12 +73,22 @@ def run_case(
 def run_eval(
     graph: Graph, classifier_name: str = "offline", judge: Judge | None = None
 ) -> int:
+    runs = {
+        case["id"]: (case, run_case(graph, case, classifier_name)) for case in CASES
+    }
+    if judge is not None:
+        problems = calibrate(judge, runs)
+        print(
+            f"judge calibration: {len(BAD_REPLIES) - len(problems)}/{len(BAD_REPLIES)} planted bad replies failed"
+        )
+        for problem in problems:
+            print(f"  {problem}")
+        if problems:
+            print("judge not calibrated: its scores are not used")
+            return 1
     totals: dict[str, int] = {}
     passed = 0
-    runs = {}
-    for index, case in enumerate(CASES):
-        turns = run_case(graph, case, classifier_name)
-        runs[case["id"]] = (case, turns)
+    for index, (case, turns) in enumerate(runs.values()):
         scores = score(case, turns)
         if judge is not None:
             scores.append(judge_case(judge, case, turns))
@@ -96,7 +106,4 @@ def run_eval(
     print(f"{passed}/{len(CASES)} passed")
     if judge is None:
         print("reply_judged: skipped (set JUDGE=llm to grade replies with a model)")
-        return int(passed != len(CASES))
-    caught = calibrate(judge, runs)
-    print(f"judge calibration: {caught}/{len(BAD_REPLIES)} planted bad replies failed")
-    return int(passed != len(CASES) or caught != len(BAD_REPLIES))
+    return int(passed != len(CASES))
